@@ -3,7 +3,7 @@ import { IsString, IsInt, IsNumber, IsEmail, IsNotEmpty, Length, IsOptional, IsB
 export class MemberDto {
   @IsOptional()
   @IsString()
-  memberId?: string; // MongoDB uses string IDs (_id)
+  memberId?: string;
 
   @IsString()
   @IsNotEmpty({ message: 'Name is required' })
