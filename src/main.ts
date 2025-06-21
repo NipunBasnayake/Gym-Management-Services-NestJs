@@ -1,9 +1,14 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { AuthService } from './security/auth.service';
+import { AuthModule } from './security/auth.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  await app.listen(process.env.PORT ?? 3000);
-}
 
+  const authService = app.select(AuthModule).get(AuthService);
+  await authService.seedUser();
+
+  await app.listen(3000);
+}
 bootstrap();
