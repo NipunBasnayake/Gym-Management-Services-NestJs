@@ -5,12 +5,14 @@ import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { Member } from './member.schema';
 import { MemberDto, EmailRequestDto } from './member.dto';
+import { NotificationsService } from '../notification/notifications.service';
 
 @Injectable()
 export class MembersService {
   constructor(
     @InjectModel(Member.name) private memberModel: Model<Member>,
     private configService: ConfigService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async create(memberDto: MemberDto): Promise<MemberDto> {
@@ -39,6 +41,13 @@ export class MembersService {
       activeStatus: true,
     });
     const savedMember = await member.save();
+
+    // Create notification for member creation
+    await this.notificationsService.create({
+      message: `New member created: ${memberDto.name} (${memberDto.email})`,
+      type: 'MEMBER_CREATED',
+    });
+
     return this.mapToDto(savedMember);
   }
 
@@ -89,6 +98,13 @@ export class MembersService {
 
     Object.assign(existingMember, memberDto);
     const updatedMember = await existingMember.save();
+
+    // Create notification for member update
+    await this.notificationsService.create({
+      message: `Member updated: ${memberDto.name} (${memberDto.email})`,
+      type: 'MEMBER_UPDATED',
+    });
+
     return this.mapToDto(updatedMember);
   }
 
@@ -105,6 +121,13 @@ export class MembersService {
     }
     member.activeStatus = false;
     await member.save();
+
+    // Create notification for member deactivation
+    await this.notificationsService.create({
+      message: `Member deactivated: ${member.name} (${member.email})`,
+      type: 'MEMBER_DEACTIVATED',
+    });
+
     return true;
   }
 
@@ -121,6 +144,13 @@ export class MembersService {
     }
     member.activeStatus = true;
     await member.save();
+
+    // Create notification for member activation
+    await this.notificationsService.create({
+      message: `Member activated: ${member.name} (${member.email})`,
+      type: 'MEMBER_ACTIVATED',
+    });
+
     return true;
   }
 
@@ -151,6 +181,13 @@ export class MembersService {
     };
 
     await transporter.sendMail(mailOptions);
+
+    // Create notification for QR code email
+    await this.notificationsService.create({
+      message: `QR code email sent to: ${request.email}`,
+      type: 'QR_CODE_SENT',
+    });
+
     return 'QR code email sent successfully';
   }
 
