@@ -20,4 +20,16 @@ export class AttendanceDto {
   @IsDateString()
   @IsOptional()
   timeOut?: string;
+
+  @IsOptional()
+  @IsString()
+  name: string;
+
+  @IsOptional()
+  @IsString()
+  mobileNumber?: string;
+
+  @IsOptional()
+  @IsString()
+  nicNumber?: string;
 }

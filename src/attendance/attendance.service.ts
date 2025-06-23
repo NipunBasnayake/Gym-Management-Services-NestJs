@@ -33,12 +33,15 @@ export class AttendanceService {
     }
 
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Start of the day
+    today.setHours(0, 0, 0, 0);
     const now = new Date();
 
     console.log('AttendanceService: Checking for existing attendance for memberId:', memberId, 'on date:', today);
     const existing = await this.attendanceModel
-      .findOne({ member: new Types.ObjectId(memberId), date: { $gte: today, $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) } })
+      .findOne({
+        member: new Types.ObjectId(memberId),
+        date: { $gte: today, $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) },
+      })
       .exec();
 
     let attendance: Attendance;
@@ -79,12 +82,19 @@ export class AttendanceService {
       console.log('AttendanceService: Created time-in notification for member:', member.email);
     }
 
-    return this.mapToDto(attendance);
+    return this.mapToDto(attendance, member);
   }
 
   async getAll(): Promise<AttendanceDto[]> {
-    const attendances = await this.attendanceModel.find().populate('member').exec();
-    return attendances.map(attendance => this.mapToDto(attendance));
+    console.log('AttendanceService: Fetching all attendance records');
+    try {
+      const attendances = await this.attendanceModel.find().populate('member').exec();
+      console.log('AttendanceService: Retrieved', attendances.length, 'attendance records');
+      return attendances.map(attendance => this.mapToDto(attendance, attendance.member));
+    } catch (error) {
+      console.error('AttendanceService: Error fetching all attendance records:', error);
+      throw new HttpException('Failed to fetch attendance records', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   async getById(id: string): Promise<AttendanceDto> {
@@ -103,7 +113,7 @@ export class AttendanceService {
       throw new HttpException(`Attendance not found with ID: ${id}`, HttpStatus.NOT_FOUND);
     }
     console.log('AttendanceService: Retrieved attendance:', attendance._id);
-    return this.mapToDto(attendance);
+    return this.mapToDto(attendance, attendance.member);
   }
 
   async getByMemberId(memberId: string): Promise<AttendanceDto[]> {
@@ -116,22 +126,25 @@ export class AttendanceService {
       console.log('AttendanceService: Invalid memberId format:', memberId);
       throw new BadRequestException('Invalid memberId format. Must be a valid MongoDB ObjectId.');
     }
-    await this.membersService.getById(memberId); // Validate member exists
+    const member = await this.membersService.getById(memberId);
     const attendances = await this.attendanceModel
       .find({ member: new Types.ObjectId(memberId) })
       .populate('member')
       .exec();
     console.log('AttendanceService: Retrieved', attendances.length, 'attendance records for memberId:', memberId);
-    return attendances.map(attendance => this.mapToDto(attendance));
+    return attendances.map(attendance => this.mapToDto(attendance, attendance.member));
   }
 
-  private mapToDto(attendance: Attendance): AttendanceDto {
+  private mapToDto(attendance: Attendance, member: any): AttendanceDto {
     return {
       attendanceId: attendance.id.toString(),
       memberId: attendance.member.toString(),
       date: attendance.date.toISOString().split('T')[0],
       timeIn: attendance.timeIn.toISOString(),
       timeOut: attendance.timeOut ? attendance.timeOut.toISOString() : undefined,
+      name: member?.name || 'N/A',
+      mobileNumber: member?.mobileNumber || 'N/A',
+      nicNumber: member?.nicNumber || 'N/A',
     };
   }
 }
