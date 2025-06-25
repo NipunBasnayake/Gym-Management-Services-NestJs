@@ -38,15 +38,18 @@ export class MembersController {
 
   @Get(':id')
   async getById(@Param('id') id: string, @Res() res: Response) {
+    this.logger.log(`Requested ID: ${id}`);
     try {
       const member = await this.membersService.getById(id);
       this.logger.log(`Retrieved member: ${member.email}`);
+
       return res.status(HttpStatus.OK).json(member);
     } catch (error) {
       this.logger.error(`Failed to retrieve member with ID ${id}: ${error.message}`);
       return res.status(error.status || HttpStatus.INTERNAL_SERVER_ERROR).json({ message: error.message });
     }
   }
+
 
   @Put(':id')
   async update(@Param('id') id: string, @Body() memberDto: MemberDto, @Res() res: Response) {
