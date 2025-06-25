@@ -68,13 +68,13 @@ export class PaymentService {
   }
 
   async update(id: string, paymentDto: PaymentDto): Promise<PaymentDto> {
-    if (!id || !id.match(/^[0-9a-f]{24}$/)) {
+    if (!id) {
       throw new BadRequestException('Invalid payment ID');
     }
-    const { memberId, amount, validUntilDate, paymentStatus } = paymentDto;
 
-    // Validate member exists
-    const member = await this.membersService.getById(memberId);
+    const {paymentId, memberId, amount, paymentDate, validUntilDate, paymentStatus } = paymentDto;
+    const member = await this.membersService.getById(paymentDto.memberId);
+
     if (!member) {
       throw new NotFoundException(`Member with ID ${memberId} not found`);
     }
@@ -87,12 +87,13 @@ export class PaymentService {
 
     const payment = await this.paymentModel
       .findByIdAndUpdate(
-        id,
+        paymentId,
         {
           member: memberId,
-          amount,
-          validUntilDate: validUntil,
-          paymentStatus,
+          amount: amount,
+          paymentDate: paymentDate,
+          validUntilDate: validUntilDate,
+          paymentStatus: paymentStatus,
         },
         { new: true },
       )
@@ -125,7 +126,7 @@ export class PaymentService {
   private mapToDto(payment: Payment): PaymentDto {
     return {
       paymentId: payment.id.toString(),
-      memberId: payment.member.toString(),
+      memberId: payment.member.id.toString(),
       amount: payment.amount,
       paymentDate: payment.paymentDate.toISOString(),
       validUntilDate: payment.validUntilDate.toISOString(),
