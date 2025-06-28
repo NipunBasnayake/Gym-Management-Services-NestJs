@@ -5,6 +5,7 @@ import { Attendance } from './attendance.schema';
 import { AttendanceDto } from './attendance.dto';
 import { MembersService } from '../member/members.service';
 import { NotificationsService } from '../notification/notifications.service';
+import { PaymentService } from '../payment/payment.service';
 
 @Injectable()
 export class AttendanceService {
@@ -12,6 +13,7 @@ export class AttendanceService {
     @InjectModel(Attendance.name) private attendanceModel: Model<Attendance>,
     private membersService: MembersService,
     private notificationsService: NotificationsService,
+    private paymentService: PaymentService,
   ) {}
 
   async createOrUpdateAttendance(memberId: string): Promise<AttendanceDto> {
@@ -32,9 +34,19 @@ export class AttendanceService {
       throw new HttpException(`Member not found with ID: ${memberId}`, HttpStatus.NOT_FOUND);
     }
 
+    // Check the latest payment for the member
+    const latestPayment = await this.paymentService.findLatestByMemberId(memberId);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const now = new Date();
+
+    if (!latestPayment || new Date(latestPayment.validUntilDate) < today) {
+      console.log('AttendanceService: Payment overdue or missing for member:', memberId);
+      await this.notificationsService.create({
+        message: `Payment overdue for member ${member.name} (${member.email}). Last valid until: ${latestPayment?.validUntilDate || 'No payment recorded'}`,
+        type: 'PAYMENT_OVERDUE',
+      });
+      throw new HttpException('Payment overdue. Please renew your membership.', HttpStatus.FORBIDDEN);
+    }
 
     console.log('AttendanceService: Checking for existing attendance for memberId:', memberId, 'on date:', today);
     const existing = await this.attendanceModel
@@ -45,6 +57,7 @@ export class AttendanceService {
       .exec();
 
     let attendance: Attendance;
+    const now = new Date();
     if (existing) {
       console.log('AttendanceService: Found existing attendance:', existing._id);
       if (existing.timeOut) {
@@ -59,7 +72,6 @@ export class AttendanceService {
       attendance = await existing.save();
       console.log('AttendanceService: Updated time-out for attendance:', attendance._id);
 
-      // Create notification for time-out
       await this.notificationsService.create({
         message: `Member ${member.name} (${member.email}) marked time-out`,
         type: 'ATTENDANCE_TIME_OUT',
@@ -74,7 +86,6 @@ export class AttendanceService {
       await attendance.save();
       console.log('AttendanceService: Created new attendance:', attendance._id);
 
-      // Create notification for time-in
       await this.notificationsService.create({
         message: `Member ${member.name} (${member.email}) marked time-in`,
         type: 'ATTENDANCE_TIME_IN',
