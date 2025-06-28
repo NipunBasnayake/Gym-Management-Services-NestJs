@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { Payment } from './payment.schema';
 import { PaymentDto } from './payment.dto';
 import { MembersService } from '../member/members.service';
@@ -17,13 +17,11 @@ export class PaymentService {
   async create(paymentDto: PaymentDto): Promise<PaymentDto> {
     const { memberId, amount, validUntilDate, paymentStatus } = paymentDto;
 
-    // Validate member exists
     const member = await this.membersService.getById(memberId);
     if (!member) {
       throw new NotFoundException(`Member with ID ${memberId} not found`);
     }
 
-    // Validate validUntilDate
     const validUntil = new Date(validUntilDate);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -31,9 +29,8 @@ export class PaymentService {
       throw new BadRequestException('Valid until date must be today or in the future');
     }
 
-    // Set payment date to today
     const payment = new this.paymentModel({
-      member: memberId,
+      member: new Types.ObjectId(memberId),
       amount,
       paymentDate: new Date(),
       validUntilDate: validUntil,
@@ -42,7 +39,6 @@ export class PaymentService {
 
     const savedPayment = await payment.save();
 
-    // Create notification
     await this.notificationsService.create({
       message: `Payment of ${amount} recorded for member ${member.name}`,
       type: 'PAYMENT_CREATED',
@@ -57,7 +53,7 @@ export class PaymentService {
   }
 
   async findOne(id: string): Promise<PaymentDto> {
-    if (!id || !id.match(/^[0-9a-f]{24}$/)) {
+    if (!id || !Types.ObjectId.isValid(id)) {
       throw new BadRequestException('Invalid payment ID');
     }
     const payment = await this.paymentModel.findById(id).populate('member').exec();
@@ -67,33 +63,45 @@ export class PaymentService {
     return this.mapToDto(payment);
   }
 
+  async findLatestByMemberId(memberId: string): Promise<PaymentDto | null> {
+    if (!Types.ObjectId.isValid(memberId)) {
+      throw new BadRequestException('Invalid memberId format');
+    }
+    const payment = await this.paymentModel
+      .findOne({ member: new Types.ObjectId(memberId) })
+      .sort({ validUntilDate: -1 })
+      .populate('member')
+      .exec();
+    return payment ? this.mapToDto(payment) : null;
+  }
+
   async update(id: string, paymentDto: PaymentDto): Promise<PaymentDto> {
-    if (!id) {
+    if (!id || !Types.ObjectId.isValid(id)) {
       throw new BadRequestException('Invalid payment ID');
     }
 
-    const {paymentId, memberId, amount, paymentDate, validUntilDate, paymentStatus } = paymentDto;
-    const member = await this.membersService.getById(paymentDto.memberId);
-
+    const { memberId, amount, paymentDate, validUntilDate, paymentStatus } = paymentDto;
+    const member = await this.membersService.getById(memberId);
     if (!member) {
       throw new NotFoundException(`Member with ID ${memberId} not found`);
     }
 
-    // Validate validUntilDate
     const validUntil = new Date(validUntilDate);
-    if (validUntil < new Date()) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (validUntil < today) {
       throw new BadRequestException('Valid until date must be today or in the future');
     }
 
     const payment = await this.paymentModel
       .findByIdAndUpdate(
-        paymentId,
+        id,
         {
-          member: memberId,
-          amount: amount,
-          paymentDate: paymentDate,
-          validUntilDate: validUntilDate,
-          paymentStatus: paymentStatus,
+          member: new Types.ObjectId(memberId),
+          amount,
+          paymentDate: new Date(paymentDate),
+          validUntilDate: validUntil,
+          paymentStatus,
         },
         { new: true },
       )
@@ -104,7 +112,6 @@ export class PaymentService {
       throw new NotFoundException(`Payment with ID ${id} not found`);
     }
 
-    // Create notification
     await this.notificationsService.create({
       message: `Payment of ${amount} updated for member ${member.name}`,
       type: 'PAYMENT_UPDATED',
@@ -114,7 +121,7 @@ export class PaymentService {
   }
 
   async delete(id: string): Promise<void> {
-    if (!id || !id.match(/^[0-9a-f]{24}$/)) {
+    if (!id || !Types.ObjectId.isValid(id)) {
       throw new BadRequestException('Invalid payment ID');
     }
     const result = await this.paymentModel.findByIdAndDelete(id).exec();
@@ -126,7 +133,7 @@ export class PaymentService {
   private mapToDto(payment: Payment): PaymentDto {
     return {
       paymentId: payment.id.toString(),
-      memberId: payment.member.id.toString(),
+      memberId: payment.member.toString(),
       amount: payment.amount,
       paymentDate: payment.paymentDate.toISOString(),
       validUntilDate: payment.validUntilDate.toISOString(),
