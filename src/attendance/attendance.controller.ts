@@ -1,12 +1,11 @@
 import { Controller, Post, Get, Param, HttpStatus, Res, UseGuards, Logger, BadRequestException } from '@nestjs/common';
 import { Response } from 'express';
 import { AttendanceService } from './attendance.service';
-import { AttendanceDto } from './attendance.dto';
 import { JwtAuthGuard } from '../security/guards/jwt-auth.guard';
 import { Types } from 'mongoose';
 
 @Controller('api/v1/attendance')
-@UseGuards(JwtAuthGuard) // Secure all endpoints with JWT authentication
+@UseGuards(JwtAuthGuard)
 export class AttendanceController {
   private readonly logger = new Logger(AttendanceController.name);
 
@@ -15,29 +14,19 @@ export class AttendanceController {
   @Post('scan/:memberId')
   async markAttendance(@Param('memberId') memberId: string, @Res() res: Response) {
     this.logger.log(`Received request to mark attendance for memberId: ${memberId}`);
-    console.log('=== markAttendance Start ===');
-    console.log('Member ID:', memberId);
-    console.log('Request Headers:', res.req.headers);
-    console.log('=== markAttendance Processing ===');
 
-    // Validate memberId as a MongoDB ObjectId
     if (!Types.ObjectId.isValid(memberId)) {
       this.logger.error(`Invalid memberId format: ${memberId}`);
-      console.log(`Invalid memberId format: ${memberId}`);
       throw new BadRequestException('Invalid memberId format. Must be a valid MongoDB ObjectId.');
     }
 
     try {
       const attendance = await this.attendanceService.createOrUpdateAttendance(memberId);
       this.logger.log(`Attendance marked for member ID: ${memberId}`);
-      console.log('Attendance Result:', JSON.stringify(attendance));
       return res.status(HttpStatus.OK).json(attendance);
     } catch (error) {
       this.logger.error(`Failed to mark attendance for member ID ${memberId}: ${error.message}`);
-      console.log('Error:', error.stack);
       return res.status(error.status || HttpStatus.INTERNAL_SERVER_ERROR).json({ message: error.message });
-    } finally {
-      console.log('=== markAttendance End ===');
     }
   }
 
