@@ -27,7 +27,6 @@ export class PaymentController {
   async getAll(@Res() res: Response) {
     try {
       const payments = await this.paymentService.findAll();
-      this.logger.log(`Retrieved ${payments.length} payments`);
       return res.status(HttpStatus.OK).json(payments);
     } catch (error) {
       this.logger.error(`Failed to retrieve payments: ${error.message}`);
@@ -55,18 +54,6 @@ export class PaymentController {
       return res.status(HttpStatus.OK).json(updatedPayment);
     } catch (error) {
       this.logger.error(`Failed to update payment with ID ${id}: ${error.message}`);
-      return res.status(error.status || HttpStatus.INTERNAL_SERVER_ERROR).json({ message: error.message });
-    }
-  }
-
-  @Delete(':id')
-  async delete(@Param('id') id: string, @Res() res: Response) {
-    try {
-      await this.paymentService.delete(id);
-      this.logger.log(`Deleted payment with ID ${id}`);
-      return res.status(HttpStatus.NO_CONTENT).send();
-    } catch (error) {
-      this.logger.error(`Failed to delete payment with ID ${id}: ${error.message}`);
       return res.status(error.status || HttpStatus.INTERNAL_SERVER_ERROR).json({ message: error.message });
     }
   }
