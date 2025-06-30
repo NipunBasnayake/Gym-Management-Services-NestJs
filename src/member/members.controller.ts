@@ -50,7 +50,6 @@ export class MembersController {
     }
   }
 
-
   @Put(':id')
   async update(@Param('id') id: string, @Body() memberDto: MemberDto, @Res() res: Response) {
     try {
