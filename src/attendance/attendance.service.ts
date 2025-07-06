@@ -128,6 +128,7 @@ export class AttendanceService {
   }
 
   async getByMemberId(memberId: string): Promise<AttendanceDto[]> {
+    console.log(memberId);
     console.log('AttendanceService: Fetching attendance by memberId:', memberId);
     if (!memberId) {
       console.log('AttendanceService: Member ID is null');
