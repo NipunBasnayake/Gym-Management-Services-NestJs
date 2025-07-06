@@ -4,8 +4,9 @@ import { Model } from 'mongoose';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { Member } from './member.schema';
-import { MemberDto, EmailRequestDto } from './member.dto';
+import { MemberDto } from './member.dto';
 import { NotificationsService } from '../notification/notifications.service';
+import { EmailRequestDto } from './emailRequest.dto';
 
 @Injectable()
 export class MembersService {
@@ -155,14 +156,6 @@ export class MembersService {
   }
 
   async sendQrEmail(request: EmailRequestDto): Promise<string> {
-    const member = await this.memberModel.findOne({ email: request.email }).exec();
-    if (!member) {
-      throw new HttpException(`Member not found with email: ${request.email}`, HttpStatus.NOT_FOUND);
-    }
-    if (!member.qrCodeData) {
-      throw new HttpException(`No QR code data available for member: ${request.email}`, HttpStatus.BAD_REQUEST);
-    }
-
     const transporter = nodemailer.createTransport({
       host: this.configService.get<string>('EMAIL_HOST'),
       port: this.configService.get<number>('EMAIL_PORT'),
@@ -174,15 +167,19 @@ export class MembersService {
     });
 
     const mailOptions = {
-      from: this.configService.get<string>('EMAIL_USER'),
+      from: `"Gym Admin" <${this.configService.get<string>('EMAIL_USER')}>`,
       to: request.email,
       subject: 'Your Gym Membership QR Code',
-      text: `Your QR code data: ${member.qrCodeData}`,
+      html: `
+      <p>Hello ${request.name},</p>
+      <p>Here is your QR code for gym access:</p>
+      <img src="${request.qrCode}" alt="QR Code" style="width:200px; height:200px;" />
+      <p>Thank you for being a valued member.</p>
+    `,
     };
 
     await transporter.sendMail(mailOptions);
 
-    // Create notification for QR code email
     await this.notificationsService.create({
       message: `QR code email sent to: ${request.email}`,
       type: 'QR_CODE_SENT',
