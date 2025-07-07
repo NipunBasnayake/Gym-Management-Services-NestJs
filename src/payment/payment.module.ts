@@ -13,6 +13,7 @@ import { NotificationsModule } from '../notification/notifications.module';
     NotificationsModule,
   ],
   providers: [PaymentService],
+  exports: [PaymentService],
   controllers: [PaymentController],
 })
 export class PaymentModule {}

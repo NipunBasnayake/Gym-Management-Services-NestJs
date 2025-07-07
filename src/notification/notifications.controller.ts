@@ -11,18 +11,6 @@ export class NotificationsController {
 
   constructor(private readonly notificationsService: NotificationsService) {}
 
-  @Post()
-  async create(@Body() notificationDto: NotificationDto, @Res() res: Response) {
-    try {
-      const savedNotification = await this.notificationsService.create(notificationDto);
-      this.logger.log(`Notification created: ${savedNotification.message}`);
-      return res.status(HttpStatus.OK).json(savedNotification);
-    } catch (error) {
-      this.logger.error(`Failed to create notification: ${error.message}`);
-      return res.status(error.status || HttpStatus.INTERNAL_SERVER_ERROR).json({ message: error.message });
-    }
-  }
-
   @Get()
   async getAll(@Res() res: Response) {
     try {
