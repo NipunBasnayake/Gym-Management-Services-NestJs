@@ -1,7 +1,8 @@
 import { Controller, Post, Get, Put, Body, Param, HttpStatus, Res, UseGuards, Logger } from '@nestjs/common';
 import { Response } from 'express';
 import { MembersService } from './members.service';
-import {MemberDto, EmailRequestDto} from './member.dto';
+import {MemberDto} from './member.dto';
+import { EmailRequestDto } from './emailRequest.dto';
 import { JwtAuthGuard } from '../security/guards/jwt-auth.guard';
 
 @Controller('api/v1/member')

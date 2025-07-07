@@ -1,15 +1,16 @@
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { IsString, IsEmail, IsNotEmpty } from 'class-validator';
 
 export class EmailRequestDto {
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+
   @IsEmail({}, { message: 'Invalid email format' })
-  @IsNotEmpty({ message: 'Email is required' })
+  @IsNotEmpty()
   email: string;
 
   @IsString()
-  @IsNotEmpty({ message: 'Name is required' })
-  name: string;
-
-  @IsString()
-  @IsNotEmpty({ message: 'QR code data is required' })
-  qrCode: string; // Expected as data:image/png;base64,...
+  @IsNotEmpty({ message: 'QR Code is required' })
+  qrCode: string;
 }
+

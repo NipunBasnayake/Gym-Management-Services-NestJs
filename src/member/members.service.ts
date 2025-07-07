@@ -18,7 +18,10 @@ export class MembersService {
 
   async create(memberDto: MemberDto): Promise<MemberDto> {
     if (!memberDto) {
-      throw new HttpException('Member data cannot be null', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Member data cannot be null',
+        HttpStatus.BAD_REQUEST,
+      );
     }
     if (!memberDto.nicNumber || memberDto.nicNumber.trim() === '') {
       throw new HttpException('NIC number is required', HttpStatus.BAD_REQUEST);
@@ -27,13 +30,23 @@ export class MembersService {
       throw new HttpException('Email is required', HttpStatus.BAD_REQUEST);
     }
 
-    const existingNic = await this.memberModel.findOne({ nicNumber: memberDto.nicNumber }).exec();
+    const existingNic = await this.memberModel
+      .findOne({ nicNumber: memberDto.nicNumber })
+      .exec();
     if (existingNic) {
-      throw new HttpException(`Member with NIC number ${memberDto.nicNumber} already exists`, HttpStatus.CONFLICT);
+      throw new HttpException(
+        `Member with NIC number ${memberDto.nicNumber} already exists`,
+        HttpStatus.CONFLICT,
+      );
     }
-    const existingEmail = await this.memberModel.findOne({ email: memberDto.email }).exec();
+    const existingEmail = await this.memberModel
+      .findOne({ email: memberDto.email })
+      .exec();
     if (existingEmail) {
-      throw new HttpException(`Member with email ${memberDto.email} already exists`, HttpStatus.CONFLICT);
+      throw new HttpException(
+        `Member with email ${memberDto.email} already exists`,
+        HttpStatus.CONFLICT,
+      );
     }
 
     const member = new this.memberModel({
@@ -54,23 +67,32 @@ export class MembersService {
 
   async getAll(): Promise<MemberDto[]> {
     const members = await this.memberModel.find().exec();
-    return members.map(member => this.mapToDto(member));
+    return members.map((member) => this.mapToDto(member));
   }
 
   async getById(id: string): Promise<MemberDto> {
     if (!id) {
-      throw new HttpException('Member ID cannot be null', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Member ID cannot be null',
+        HttpStatus.BAD_REQUEST,
+      );
     }
     const member = await this.memberModel.findById(id).exec();
     if (!member) {
-      throw new HttpException(`Member not found with ID: ${id}`, HttpStatus.NOT_FOUND);
+      throw new HttpException(
+        `Member not found with ID: ${id}`,
+        HttpStatus.NOT_FOUND,
+      );
     }
     return this.mapToDto(member);
   }
 
   async update(id: string, memberDto: MemberDto): Promise<MemberDto> {
     if (!id || !memberDto) {
-      throw new HttpException('Member ID and data cannot be null', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Member ID and data cannot be null',
+        HttpStatus.BAD_REQUEST,
+      );
     }
     if (!memberDto.nicNumber || memberDto.nicNumber.trim() === '') {
       throw new HttpException('NIC number is required', HttpStatus.BAD_REQUEST);
@@ -81,19 +103,32 @@ export class MembersService {
 
     const existingMember = await this.memberModel.findById(id).exec();
     if (!existingMember) {
-      throw new HttpException(`Member not found with ID: ${id}`, HttpStatus.NOT_FOUND);
+      throw new HttpException(
+        `Member not found with ID: ${id}`,
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     if (existingMember.nicNumber !== memberDto.nicNumber) {
-      const existingNic = await this.memberModel.findOne({ nicNumber: memberDto.nicNumber }).exec();
+      const existingNic = await this.memberModel
+        .findOne({ nicNumber: memberDto.nicNumber })
+        .exec();
       if (existingNic) {
-        throw new HttpException(`Member with NIC number ${memberDto.nicNumber} already exists`, HttpStatus.CONFLICT);
+        throw new HttpException(
+          `Member with NIC number ${memberDto.nicNumber} already exists`,
+          HttpStatus.CONFLICT,
+        );
       }
     }
     if (existingMember.email !== memberDto.email) {
-      const existingEmail = await this.memberModel.findOne({ email: memberDto.email }).exec();
+      const existingEmail = await this.memberModel
+        .findOne({ email: memberDto.email })
+        .exec();
       if (existingEmail) {
-        throw new HttpException(`Member with email ${memberDto.email} already exists`, HttpStatus.CONFLICT);
+        throw new HttpException(
+          `Member with email ${memberDto.email} already exists`,
+          HttpStatus.CONFLICT,
+        );
       }
     }
 
@@ -111,11 +146,17 @@ export class MembersService {
 
   async deactivate(id: string): Promise<boolean> {
     if (!id) {
-      throw new HttpException('Member ID cannot be null', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Member ID cannot be null',
+        HttpStatus.BAD_REQUEST,
+      );
     }
     const member = await this.memberModel.findById(id).exec();
     if (!member) {
-      throw new HttpException(`Member not found with ID: ${id}`, HttpStatus.NOT_FOUND);
+      throw new HttpException(
+        `Member not found with ID: ${id}`,
+        HttpStatus.NOT_FOUND,
+      );
     }
     if (!member.activeStatus) {
       return false;
@@ -134,11 +175,17 @@ export class MembersService {
 
   async activate(id: string): Promise<boolean> {
     if (!id) {
-      throw new HttpException('Member ID cannot be null', HttpStatus.BAD_REQUEST);
+      throw new HttpException(
+        'Member ID cannot be null',
+        HttpStatus.BAD_REQUEST,
+      );
     }
     const member = await this.memberModel.findById(id).exec();
     if (!member) {
-      throw new HttpException(`Member not found with ID: ${id}`, HttpStatus.NOT_FOUND);
+      throw new HttpException(
+        `Member not found with ID: ${id}`,
+        HttpStatus.NOT_FOUND,
+      );
     }
     if (member.activeStatus) {
       return false;
@@ -156,6 +203,17 @@ export class MembersService {
   }
 
   async sendQrEmail(request: EmailRequestDto): Promise<string> {
+    if (!request.email || !request.qrCode || !request.name) {
+      throw new HttpException(
+        'Name, Email and QR Code are required',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    // Extract base64 content from Data URL
+    const base64Data = request.qrCode.replace(/^data:image\/png;base64,/, '');
+    const qrBuffer = Buffer.from(base64Data, 'base64');
+
     const transporter = nodemailer.createTransport({
       host: this.configService.get<string>('EMAIL_HOST'),
       port: this.configService.get<number>('EMAIL_PORT'),
@@ -167,15 +225,22 @@ export class MembersService {
     });
 
     const mailOptions = {
-      from: `"Gym Admin" <${this.configService.get<string>('EMAIL_USER')}>`,
+      from: this.configService.get<string>('EMAIL_USER'),
       to: request.email,
       subject: 'Your Gym Membership QR Code',
       html: `
       <p>Hello ${request.name},</p>
       <p>Here is your QR code for gym access:</p>
-      <img src="${request.qrCode}" alt="QR Code" style="width:200px; height:200px;" />
+      <img src="cid:qrCodeImage" alt="QR Code" style="width:200px; height:auto;" />
       <p>Thank you for being a valued member.</p>
     `,
+      attachments: [
+        {
+          filename: 'qrcode.png',
+          content: qrBuffer,
+          cid: 'qrCodeImage', // Matches `cid:` in HTML img tag
+        },
+      ],
     };
 
     await transporter.sendMail(mailOptions);
