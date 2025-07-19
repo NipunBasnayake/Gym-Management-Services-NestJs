@@ -6,6 +6,7 @@ import { MembersModule } from './member/members.module';
 import { NotificationsModule } from './notification/notifications.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { PaymentModule } from './payment/payment.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
   imports: [
@@ -14,6 +15,20 @@ import { PaymentModule } from './payment/payment.module';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         uri: configService.get<string>('MONGO_URI'),
+      }),
+      inject: [ConfigService]
+    }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (ConfigService: ConfigService) => ({
+        type: 'postgres',
+        host: ConfigService.get<string>('POSTGRES_HOST'),
+        port: ConfigService.get<number>('POSTGRES_PORT'),
+        username: ConfigService.get<string>('POSTGRES_USER'),
+        password: ConfigService.get<string>('POSTGRES_PASSWORD'),
+        database: ConfigService.get<string>('POSTGRES_DB'),
+        autoLoadEntities: true,
+        synchronize: true  // set false this an production deploy...
       }),
       inject: [ConfigService],
     }),
@@ -24,4 +39,4 @@ import { PaymentModule } from './payment/payment.module';
     PaymentModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }
