@@ -6,6 +6,7 @@ import { AttendanceDto } from './attendance.dto';
 import { MembersService } from '../member/members.service';
 import { NotificationsService } from '../notification/notifications.service';
 import { PaymentService } from '../payment/payment.service';
+import { MemberDto } from '../member/member.dto';
 
 @Injectable()
 export class AttendanceService {
@@ -16,31 +17,45 @@ export class AttendanceService {
     private paymentService: PaymentService,
   ) {}
 
-  async createOrUpdateAttendance(memberId: string): Promise<AttendanceDto> {
-    console.log('AttendanceService: createOrUpdateAttendance called with memberId:', memberId);
-    if (!memberId) {
+  async createOrUpdateAttendance(id: string): Promise<AttendanceDto> {
+    console.log('AttendanceService: createOrUpdateAttendance called with memberId:', id);
+    if (!id) {
       console.log('AttendanceService: Member ID is null');
       throw new HttpException('Member ID cannot be null', HttpStatus.BAD_REQUEST);
     }
 
-    if (!Types.ObjectId.isValid(memberId)) {
-      console.log('AttendanceService: Invalid memberId format:', memberId);
+/*    if (!Types.ObjectId.isValid(id)) {
+      console.log('AttendanceService: Invalid memberId format:', id);
       throw new BadRequestException('Invalid memberId format. Must be a valid MongoDB ObjectId.');
+    }*/
+
+    // @ts-ignore
+    let member:MemberDto = null;
+
+    if (!Types.ObjectId.isValid(id)) {
+      console.log('AttendanceService: This is An Not Object ID.This is a NIC Number:', id);
+      // throw new BadRequestException('Invalid memberId format. Must be a valid MongoDB ObjectId.');
+
+      member = await this.membersService.getByNicNumber(id)
+    }else{
+      member = await this.membersService.getById(id);
     }
 
-    const member = await this.membersService.getById(memberId);
+    //const member = await this.membersService.getById(nicNumber);
+
     if (!member) {
-      console.log('AttendanceService: Member not found for ID:', memberId);
-      throw new HttpException(`Member not found with ID: ${memberId}`, HttpStatus.NOT_FOUND);
+      console.log('AttendanceService: Member not found for ID:', id);
+      throw new HttpException(`Member not found with ID: ${id}`, HttpStatus.NOT_FOUND);
     }
 
     // Check the latest payment for the member
-    const latestPayment = await this.paymentService.findLatestByMemberId(memberId);
+    // @ts-ignore
+    const latestPayment = await this.paymentService.findLatestByMemberId(member.memberId);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     if (!latestPayment || new Date(latestPayment.validUntilDate) < today) {
-      console.log('AttendanceService: Payment overdue or missing for member:', memberId);
+      console.log('AttendanceService: Payment overdue or missing for member:', id);
       await this.notificationsService.create({
         message: `Payment overdue for member ${member.name} (${member.email}). Last valid until: ${latestPayment?.validUntilDate || 'No payment recorded'}`,
         type: 'PAYMENT_OVERDUE',
@@ -48,10 +63,10 @@ export class AttendanceService {
       throw new HttpException('Payment overdue. Please renew your membership.', HttpStatus.FORBIDDEN);
     }
 
-    console.log('AttendanceService: Checking for existing attendance for memberId:', memberId, 'on date:', today);
+    console.log('AttendanceService: Checking for existing attendance for memberId:', id, 'on date:', today);
     const existing = await this.attendanceModel
       .findOne({
-        member: new Types.ObjectId(memberId),
+        member: new Types.ObjectId(member.memberId),
         date: { $gte: today, $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) },
       })
       .exec();
@@ -79,7 +94,7 @@ export class AttendanceService {
       console.log('AttendanceService: Created time-out notification for member:', member.email);
     } else {
       attendance = new this.attendanceModel({
-        member: new Types.ObjectId(memberId),
+        member: new Types.ObjectId(member.memberId),
         date: today,
         timeIn: now,
       });

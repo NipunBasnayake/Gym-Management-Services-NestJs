@@ -4,8 +4,10 @@ import { AuthService } from './security/auth.service';
 import { AuthModule } from './security/auth.module';
 import { ConfigService } from '@nestjs/config';
 import { Logger } from '@nestjs/common';
+import * as dotenv from 'dotenv';
 
 async function bootstrap() {
+  dotenv.config();
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
 

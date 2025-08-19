@@ -70,17 +70,40 @@ export class MembersService {
     return members.map((member) => this.mapToDto(member));
   }
 
-  async getById(id: string): Promise<MemberDto> {
-    if (!id) {
+  async getById(memberId: string): Promise<MemberDto> {
+    if (!memberId) {
       throw new HttpException(
         'Member ID cannot be null',
         HttpStatus.BAD_REQUEST,
       );
     }
-    const member = await this.memberModel.findById(id).exec();
+    const member = await this.memberModel.findById(memberId).exec();
+
+    console.log("Found Member",member);
+
     if (!member) {
       throw new HttpException(
-        `Member not found with ID: ${id}`,
+        `Member not found with ID: ${memberId}`,
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    return this.mapToDto(member);
+  }
+
+  async getByNicNumber(nicNumber: string): Promise<MemberDto> {
+    if (!nicNumber) {
+      throw new HttpException(
+        'NIC Number cannot be null',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    const member = await this.memberModel.findOne({ nicNumber }).exec();
+
+    console.log("Found Member",member);
+
+    if (!member) {
+      throw new HttpException(
+        `Member not found with ID: ${nicNumber}`,
         HttpStatus.NOT_FOUND,
       );
     }
