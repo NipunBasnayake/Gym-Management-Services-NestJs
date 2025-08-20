@@ -11,11 +11,16 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
 
+  const allowedOrigins = [
+    'https://d6ac7ff6fb7a.ngrok-free.app', // Current frontend ngrok URL
+    'http://localhost:3000', // Local development
+  ];
+
   app.enableCors({
-    origin: 'http://localhost:3000',
+    origin: allowedOrigins,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     allowedHeaders: 'Content-Type,Authorization',
-    credentials: true,
+    optionsSuccessStatus: 204,
   });
 
   const configService = app.get(ConfigService);
@@ -27,5 +32,10 @@ async function bootstrap() {
 
   await app.listen(port);
   logger.log(`Application is running on port ${port}`);
+
+  app.use((req, res, next) => {
+    logger.log(`Incoming request: ${req.method} ${req.url}, Origin: ${req.headers.origin}`);
+    next();
+  });
 }
 bootstrap();

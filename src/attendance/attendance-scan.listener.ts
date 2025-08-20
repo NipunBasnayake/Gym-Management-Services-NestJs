@@ -27,8 +27,8 @@ export class AttendanceScanListener implements PgTableChangeListener<AttendanceS
         console.log(`New attendance scan detected for nicNumber: ${nicNumber}`);
 
         // Trigger your existing MongoDB-based attendance marking
-        let attendanceDto = await this.attendanceService.createOrUpdateAttendance(nicNumber);
-        console.log("Attendance Service Return Data", attendanceDto);
+         let dto = await this.attendanceService.createOrUpdateAttendance(nicNumber);
+        console.log("Attendance Service Return Data", dto);
 
 
       });
