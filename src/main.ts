@@ -13,7 +13,8 @@ async function bootstrap() {
 
   const allowedOrigins = [
     'https://d6ac7ff6fb7a.ngrok-free.app', // Current frontend ngrok URL
-    'http://localhost:3000', // Local development
+    'http://localhost:3000',
+    `http://192.168.1.3:3000`// Local development
   ];
 
   app.enableCors({
@@ -30,7 +31,7 @@ async function bootstrap() {
   await authService.seedUser();
   logger.log('Predefined user seeded');
 
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
   logger.log(`Application is running on port ${port}`);
 
   app.use((req, res, next) => {

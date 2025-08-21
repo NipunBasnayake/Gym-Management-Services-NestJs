@@ -10,6 +10,7 @@ import { PaymentModule } from '../payment/payment.module';
 import { TypeOrmModule } from '@nestjs/typeorm';  // New
 import { AttendanceScan } from './attendance-scan.entity';  // New
 import { AttendanceScanListener } from './attendance-scan.listener';
+import { AttendanceGateway } from './attendance.gateway';
 
 @Module({
   imports: [
@@ -20,7 +21,7 @@ import { AttendanceScanListener } from './attendance-scan.listener';
     forwardRef(() => PaymentModule),
   ],
   controllers: [AttendanceController],
-  providers: [AttendanceService, AttendanceScanListener],
+  providers: [AttendanceService, AttendanceScanListener, AttendanceGateway],
   exports: [AttendanceService],
 })
 export class AttendanceModule {}

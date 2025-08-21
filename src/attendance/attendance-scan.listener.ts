@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, Logger, HttpException } from '@nestjs/common';
 import {
   RegisterPgTableChangeListener,
   PgTableChangeListener,
@@ -7,13 +7,17 @@ import {
 } from '@cisstech/nestjs-pg-pubsub';
 import { AttendanceScan } from './attendance-scan.entity';
 import { AttendanceService } from './attendance.service';
+import { AttendanceGateway } from './attendance.gateway';
+import { HttpStatus } from '@nestjs/common';
 
 @Injectable()
 @RegisterPgTableChangeListener(AttendanceScan)  // Registers listener for this entity
 export class AttendanceScanListener implements PgTableChangeListener<AttendanceScan> {
+  private readonly logger = new Logger(AttendanceScanListener.name);
+
   constructor(
     private readonly attendanceService: AttendanceService,  // Inject your existing service
-    //private readonly attendanceController: AttendanceController
+    private readonly attendanceGateway: AttendanceGateway
   ) {}
 
   async process(
@@ -24,18 +28,29 @@ export class AttendanceScanListener implements PgTableChangeListener<AttendanceS
       // Handle INSERT events (new scan data inserted into PG table)
       changes.INSERT.forEach(async (insert) => {
         const nicNumber = insert.data.employeeid;
-        console.log(`New attendance scan detected for nicNumber: ${nicNumber}`);
+        this.logger.log(`New attendance scan detected for nicNumber: ${nicNumber}`);
 
-        // Trigger your existing MongoDB-based attendance marking
-         let dto = await this.attendanceService.createOrUpdateAttendance(nicNumber);
-        console.log("Attendance Service Return Data", dto);
+        try{
+          // Trigger your existing MongoDB-based attendance marking
+          let attendanceDto = await this.attendanceService.createOrUpdateAttendance(nicNumber);
+          this.logger.log("Attendance Service Return Data", attendanceDto);
 
+          this.attendanceGateway.broadcastAttendance({
+            success: true,
+            data: attendanceDto,
+          });
+        }catch (error) {
+          this.logger.log('Error processing attendance scan:', error);
+          const errorMessage = error instanceof HttpException
+            ? {message: error.message, status: error.getStatus()}
+            : {message: 'Unkown error occured', status: HttpStatus.INTERNAL_SERVER_ERROR};
+          this.attendanceGateway.broadcastAttendance({
+            success: false,
+            data: errorMessage,
+          })
+        }
 
       });
-
-      // Optionally handle UPDATE or DELETE if needed in the future
-      // changes.UPDATE.forEach(...);
-      // changes.DELETE.forEach(...);
     } catch (error) {
       console.error('Error processing attendance scan:', error);
       if (onError) {
