@@ -10,6 +10,7 @@ import { PaymentModule } from './payment/payment.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PgPubSubModule } from '@cisstech/nestjs-pg-pubsub';
 import { AttendanceScan } from './attendance/attendance-scan.entity';
+import { ReportsModule } from './report/reports.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { AttendanceScan } from './attendance/attendance-scan.entity';
     NotificationsModule,
     AttendanceModule,
     PaymentModule,
+    ReportsModule,
   ],
 })
 export class AppModule {}
