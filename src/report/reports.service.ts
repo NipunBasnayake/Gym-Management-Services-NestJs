@@ -85,16 +85,23 @@ export class ReportsService {
     const today = new Date();
     let startDate = new Date();
     let groupBy = '';
+    let labelFormat = (date: string, index: number) => date;
 
     if (filter === 'week') {
-      startDate.setDate(startDate.getDate() - 7);
+      startDate.setDate(startDate.getDate() - 6); // Last 7 days including today
       groupBy = '%Y-%m-%d';
+      labelFormat = (date: string) => {
+        const day = new Date(date).toLocaleString('en-US', { weekday: 'short' });
+        return day;
+      };
     } else if (filter === 'month') {
       startDate.setDate(1);
       groupBy = '%Y-%U';
+      labelFormat = (week: string, index: number) => `Week ${index + 1}`;
     } else if (filter === 'year') {
       startDate = new Date(today.getFullYear(), 0, 1);
       groupBy = '%Y-%m';
+      labelFormat = (month: string) => new Date(month + '-01').toLocaleString('en-US', { month: 'short' });
     }
 
     const data = await this.paymentModel.aggregate([
@@ -108,23 +115,30 @@ export class ReportsService {
       { $sort: { _id: 1 } },
     ]);
 
-    return data.map((item) => ({ label: item._id, revenue: item.revenue }));
+    return data.map((item, index) => ({ label: labelFormat(item._id, index), revenue: item.revenue }));
   }
 
   async getAttendanceData(filter: 'week' | 'month' | 'year'): Promise<any[]> {
     const today = new Date();
     let startDate = new Date();
     let groupBy = '';
+    let labelFormat = (date: string, index: number) => date;
 
     if (filter === 'week') {
-      startDate.setDate(startDate.getDate() - 7);
+      startDate.setDate(startDate.getDate() - 6); // Last 7 days including today
       groupBy = '%Y-%m-%d';
+      labelFormat = (date: string) => {
+        const day = new Date(date).toLocaleString('en-US', { weekday: 'short' });
+        return day;
+      };
     } else if (filter === 'month') {
       startDate.setDate(1);
       groupBy = '%Y-%U';
+      labelFormat = (week: string, index: number) => `Week ${index + 1}`;
     } else if (filter === 'year') {
       startDate = new Date(today.getFullYear(), 0, 1);
       groupBy = '%Y-%m';
+      labelFormat = (month: string) => new Date(month + '-01').toLocaleString('en-US', { month: 'short' });
     }
 
     const data = await this.attendanceModel.aggregate([
@@ -144,6 +158,6 @@ export class ReportsService {
       { $sort: { _id: 1 } },
     ]);
 
-    return data.map((item) => ({ label: item._id, members: item.members }));
+    return data.map((item, index) => ({ label: labelFormat(item._id, index), members: item.members }));
   }
 }
