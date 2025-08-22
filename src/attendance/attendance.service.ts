@@ -7,6 +7,7 @@ import { MembersService } from '../member/members.service';
 import { NotificationsService } from '../notification/notifications.service';
 import { PaymentService } from '../payment/payment.service';
 import { MemberDto } from '../member/member.dto';
+import { toZonedTime, format } from 'date-fns-tz';
 
 @Injectable()
 export class AttendanceService {
@@ -51,8 +52,11 @@ export class AttendanceService {
     // Check the latest payment for the member
     // @ts-ignore
     const latestPayment = await this.paymentService.findLatestByMemberId(member.memberId);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const today = toZonedTime(now, 'Asia/Colombo');
+    //today.setHours(0, 0, 0, 0);
+
+    console.log('Current Date in Asia/Colombo:', format(today, 'yyyy-MM-dd HH:mm:ssXXX', { timeZone: 'Asia/Colombo' }));
 
     if (!latestPayment || new Date(latestPayment.validUntilDate) < today) {
       console.log('AttendanceService: Payment overdue or missing for member:', id);
@@ -72,18 +76,18 @@ export class AttendanceService {
       .exec();
 
     let attendance: Attendance;
-    const now = new Date();
+    const nowZoned = toZonedTime(now, 'Asia/Colombo');
     if (existing) {
       console.log('AttendanceService: Found existing attendance:', existing._id);
       if (existing.timeOut) {
         console.log('AttendanceService: Time-out already marked for today');
         throw new HttpException('Already marked time-out for today', HttpStatus.CONFLICT);
       }
-      if (now <= existing.timeIn) {
+      if (nowZoned <= existing.timeIn) {
         console.log('AttendanceService: Invalid time sequence');
         throw new HttpException('Invalid time sequence: time-out cannot be before time-in', HttpStatus.CONFLICT);
       }
-      existing.timeOut = now;
+      existing.timeOut = nowZoned;
       attendance = await existing.save();
       console.log('AttendanceService: Updated time-out for attendance:', attendance._id);
 
@@ -96,10 +100,11 @@ export class AttendanceService {
       attendance = new this.attendanceModel({
         member: new Types.ObjectId(member.memberId),
         date: today,
-        timeIn: now,
+        timeIn: nowZoned,
       });
       await attendance.save();
       console.log('AttendanceService: Created new attendance:', attendance._id);
+      console.log('AttendanceService: Created new attendance date checking:', today);
 
       await this.notificationsService.create({
         message: `Member ${member.name} (${member.email}) marked time-in`,
