@@ -36,7 +36,7 @@ RUN chmod +x ./docker-entrypoint.sh
 USER appuser
 
 ENV NODE_ENV=production
-ENV PORT=3000
-EXPOSE 3000
+ENV PORT=3500
+EXPOSE 3500
 
 CMD [ "./docker-entrypoint.sh" ]

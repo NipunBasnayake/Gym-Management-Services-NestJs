@@ -14,7 +14,8 @@ async function bootstrap() {
   const allowedOrigins = [
     'https://d6ac7ff6fb7a.ngrok-free.app', // Current frontend ngrok URL
     'http://localhost:3000',
-    `http://192.168.1.3:3000`// Local development
+    `http://192.168.1.3:3000`,// Local development.
+    'https://rskfitness.technook.lk'
   ];
 
   app.enableCors({

@@ -4,7 +4,7 @@ services:
       context: .
       target: runner
     image: gym-management-services-nest:latest
-    restart: always
+    restart: unless-stopped
     env_file: .env
     environment:
       - NODE_ENV=production
@@ -12,19 +12,21 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - "3000:3000"
+      - "3500:3500"
     networks:
       - backend-net
 
   postgres:
     image: postgres:15-alpine
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${PG_USERNAME}
       POSTGRES_PASSWORD: ${PG_PASSWORD}
       POSTGRES_DB: ${PG_DATABASE}
     volumes:
       - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${PG_USERNAME} -d ${PG_DATABASE}"]
       interval: 5s
