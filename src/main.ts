@@ -7,21 +7,29 @@ import { Logger } from '@nestjs/common';
 import * as dotenv from 'dotenv';
 
 async function bootstrap() {
+  process.env.TZ = 'Asia/Colombo';
+
   dotenv.config();
   const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
 
+
   const allowedOrigins = [
-    'https://d6ac7ff6fb7a.ngrok-free.app', // Current frontend ngrok URL
     'http://localhost:3000',
     `http://192.168.1.3:3000`,// Local development.
-    'https://rskfitness.technook.lk'
+    'https://rskfitness.technook.lk',
+    'https://www.rskfitness.technook.lk'
   ];
 
   app.enableCors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if(!origin)  return callback(null,true);
+      if(allowedOrigins.includes(origin)) return callback(null, true);
+      callback(new Error('Not Allowed by CORS'));
+    },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    allowedHeaders: 'Content-Type,Authorization',
+    credentials: true,
+    allowedHeaders: 'Content-Type,Authorization, X-Requested-with, Accept, Origin',
     optionsSuccessStatus: 204,
   });
 
