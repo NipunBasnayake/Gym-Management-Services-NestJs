@@ -132,7 +132,7 @@ export class PaymentService {
 
   private mapToDto(payment: Payment): PaymentDto {
     return {
-      paymentId: payment.id.toString(),
+      paymentId: payment._id.toString(),
       memberId: payment.member.id.toString(),
       amount: payment.amount,
       paymentDate: payment.paymentDate.toISOString(),

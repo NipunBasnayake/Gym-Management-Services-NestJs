@@ -7,10 +7,10 @@ export class Attendance extends Document {
   @Prop({ type: Types.ObjectId, ref: 'Member', required: true })
   member: Types.ObjectId;
 
-  @Prop({ required: true })
+  @Prop({type:Date, required: true })
   date: Date;
 
-  @Prop({ required: true })
+  @Prop({type:Date, required: true })
   timeIn: Date;
 
   @Prop()

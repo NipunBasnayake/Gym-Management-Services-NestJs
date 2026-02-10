@@ -75,7 +75,7 @@ export class NotificationsService {
 
   private mapToDto(notification: Notification): NotificationDto {
     return {
-      notificationId: notification.id.toString(),
+      notificationId: notification._id.toString(),
       message: notification.message,
       dateCreated: notification.dateCreated.toISOString(),
       isRead: notification.isRead,

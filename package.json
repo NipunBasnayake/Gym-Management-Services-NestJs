@@ -11,28 +11,41 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "start:prod": "node dist/main.js",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "typeorm:migrate:run": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d ./dist/data-source.js",
+    "migration:generate": "typeorm migration:generate -d ./src/data-source.ts",
+    "prisma:dummy": "echo"
   },
   "dependencies": {
+    "@cisstech/nestjs-pg-pubsub": "^1.10.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
     "@nestjs/jwt": "^11.0.0",
-    "@nestjs/mongoose": "^11.0.3",
+    "@nestjs/mongoose": "^11.0.4",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/platform-socket.io": "^11.1.6",
+    "@nestjs/typeorm": "^11.0.0",
+    "@nestjs/websockets": "^11.1.6",
     "bcrypt": "^6.0.0",
     "class-validator": "^0.14.2",
+    "date-fns-tz": "^3.2.0",
+    "dotenv": "^17.2.1",
     "mongodb": "^6.17.0",
+    "mongoose": "^9.1.6",
     "nodemailer": "^7.0.3",
     "passport-jwt": "^4.0.1",
+    "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "socket.io": "^4.8.1",
+    "typeorm": "^0.3.25"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.0",
@@ -43,6 +56,8 @@
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^22.10.7",
+    "@types/pg": "^8.15.5",
+    "@types/socket.io": "^3.0.1",
     "@types/supertest": "^6.0.2",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",
@@ -73,5 +88,10 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
+  },
+  "overrides": {
+    "@cisstech/nestjs-pg-pubsub": {
+      "@nestjs/common": "^11.0.0"
+    }
   }
 }

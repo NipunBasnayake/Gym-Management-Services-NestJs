@@ -7,16 +7,21 @@ import { Attendance, AttendanceSchema } from './attendance.schema';
 import { MembersModule } from '../member/members.module';
 import { NotificationsModule } from '../notification/notifications.module';
 import { PaymentModule } from '../payment/payment.module';
+import { TypeOrmModule } from '@nestjs/typeorm';  // New
+import { AttendanceScan } from './attendance-scan.entity';  // New
+import { AttendanceScanListener } from './attendance-scan.listener';
+import { AttendanceGateway } from './attendance.gateway';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Attendance.name, schema: AttendanceSchema }]),
+    TypeOrmModule.forFeature([AttendanceScan]),
     MembersModule,
     NotificationsModule,
     forwardRef(() => PaymentModule),
   ],
   controllers: [AttendanceController],
-  providers: [AttendanceService],
+  providers: [AttendanceService, AttendanceScanListener, AttendanceGateway],
   exports: [AttendanceService],
 })
 export class AttendanceModule {}
